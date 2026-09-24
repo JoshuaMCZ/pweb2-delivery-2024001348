@@ -1,54 +1,128 @@
-# Delivery Tracker — Exercício do Capítulo 4
+# Delivery Tracker API
 
-> **Programação Web II — IFAL/Maceió.** Este é o **projeto do semestre** (avaliado). No Cap. 4 você
-> inicia a **Delivery Tracker API** com **arquitetura em camadas** e, depois, **Repository Pattern +
-> injeção de dependência**. A correção é **automática** (autograder de conformidade) + arquitetura.
+Projeto da Atividade 05 de Programação Web.
 
-## Como usar este repositório
+A aplicação é uma API para cadastro e acompanhamento de entregas, feita com Node.js e Express. O projeto utiliza arquitetura em camadas, separando as rotas, controllers, services e repositories.
 
-1. Clique em **"Use this template"** e crie **`pweb2-delivery-<matricula>`** (ex.: `pweb2-delivery-20231012345`).
-   Este é o repositório que você usará o **semestre inteiro** (evolui a cada capítulo).
-2. Clone, instale e rode:
-   ```bash
-   npm install
-   npm start                                        # http://localhost:3000
-   # em outro terminal — autograder:
-   npm run check                                    # = BASE_URL=http://localhost:3000 node autograder/check.mjs
-   ```
-3. A cada `git push`, o **GitHub Actions** roda o autograder e mostra a nota na aba **Actions**
-   (resumo do job). O `autograder/check.mjs` é **aberto** — leia para saber exatamente o que se espera.
+## Como executar
 
-## O que implementar (em `src/`)
+É necessário ter o Node.js e o npm instalados.
 
+Na pasta do projeto, execute:
+
+```bash
+npm install
 ```
+
+Depois:
+
+```bash
+npm start
+```
+
+A API ficará disponível em:
+
+```text
+http://localhost:3000
+```
+
+## Testando a API
+
+### Verificar se está funcionando
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Resposta:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### Criar uma entrega
+
+No Windows:
+
+```bash
+curl -X POST http://localhost:3000/api/entregas ^
+  -H "Content-Type: application/json" ^
+  -d "{\"descricao\":\"Entrega de documentos\",\"origem\":\"Maceió\",\"destino\":\"Arapiraca\"}"
+```
+
+### Listar entregas
+
+```bash
+curl http://localhost:3000/api/entregas
+```
+
+### Filtrar por status
+
+```bash
+curl "http://localhost:3000/api/entregas?status=EM_TRANSITO"
+```
+
+### Buscar uma entrega
+
+```bash
+curl http://localhost:3000/api/entregas/1
+```
+
+### Avançar o status
+
+```bash
+curl -X PATCH http://localhost:3000/api/entregas/1/avancar
+```
+
+O fluxo normal é:
+
+```text
+CRIADA → EM_TRANSITO → ENTREGUE
+```
+
+### Cancelar uma entrega
+
+```bash
+curl -X PATCH http://localhost:3000/api/entregas/1/cancelar
+```
+
+### Ver o histórico
+
+```bash
+curl http://localhost:3000/api/entregas/1/historico
+```
+
+## Estrutura do projeto
+
+```text
 src/
-├── controllers/   # traduz HTTP ↔ service (sem regra de negócio)
-├── services/      # TODA a regra de negócio
-├── repositories/  # só acesso a dados
-├── database/      # persistência SIMULADA em memória (sem banco real, sem ORM)
-├── routes/        # composição das dependências (injeção) + monta em /api
+├── controllers/
+├── services/
+├── repositories/
+├── database/
+├── routes/
 └── utils/
 ```
 
-- **Regra de negócio só no Service.** Injeção de dependência no **composition root** (`src/routes`).
-- O `server.js` só configura o app (já traz o `GET /api/health` exigido — não remova).
+- **Controllers:** recebem as requisições e retornam as respostas.
+- **Services:** concentram as regras de negócio.
+- **Repositories:** cuidam dos dados.
+- **Database:** mantém os dados em memória.
+- **Routes:** definem as rotas e organizam as dependências.
+- **Utils:** pasta para funções auxiliares (acabei não usando, mas continua no arquivo pela estrutura do projeto).
 
-## Duas etapas (ver os enunciados completos)
+## Autograder
 
-- **Atividade 05 — Entregas em camadas:** CRUD de `/api/entregas`, ciclo de status
-  (`CRIADA → EM_TRANSITO → ENTREGUE`/`CANCELADA`), histórico. Meta: checagens de **Entregas** verdes.
-- **Atividade 06 — Motoristas + Contratos + DI:** `/api/motoristas`, atribuição de motorista,
-  contratos de repository (JSDoc) e composição num ponto único. Meta: **122/122**.
+Com o servidor rodando, abra outro terminal e execute:
 
-> O critério de **inversão de dependência** é verificado pelo professor **trocando o repository por
-> um Mock** que respeita o contrato — programe contra o contrato desde o início.
+```bash
+npm run check
+```
 
-## Contrato (resumo)
+## Observação
 
-- Base `/api` · JSON · erro `{ "erro": "..." }` · `GET /api/health` → `{ "status": "ok" }`.
-- Status: `201` criar · `400` entrada inválida · `404` não encontrado · `409` unicidade
-  (duplicata/CPF) · `422` regra de estado (transição/atribuição inválida).
-- Execução: `npm start`, respeita `process.env.PORT`, branch `main`.
+Os dados ficam somente em memória. Por isso, eles são perdidos quando o servidor é encerrado ou reiniciado.
 
-Faça **um commit por avanço** (Conventional Commits, ex.: `feat(entregas): valida origem ≠ destino`).
-Bom trabalho! 🚀
+Esta atividade trabalha com as funcionalidades de **Entregas**. As funcionalidades de Motoristas ficam para a atividade seguinte (atividade 06).
