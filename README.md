@@ -169,3 +169,35 @@ npm run check
 ## Observação
 
 Os dados ficam somente em memória. Por isso, eles são perdidos quando o servidor é encerrado ou reiniciado.
+## Diagrama da composição das dependências
+
+```text
+                         ┌──────────────┐
+                         │   Database   │
+                         └──────┬───────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+                ▼                               ▼
+     ┌────────────────────┐          ┌──────────────────────┐
+     │ EntregasRepository │          │ MotoristasRepository │
+     └─────────┬──────────┘          └──────────┬───────────┘
+               │                                │
+               ▼                                ▼
+     ┌────────────────────┐          ┌──────────────────────┐
+     │  EntregasService   │◄────────►│  MotoristasService  │
+     └─────────┬──────────┘          └──────────┬───────────┘
+               │                                │
+               ▼                                ▼
+     ┌────────────────────┐          ┌──────────────────────┐
+     │ EntregasController │          │ MotoristasController │
+     └─────────┬──────────┘          └──────────┬───────────┘
+               │                                │
+               └───────────────┬────────────────┘
+                               ▼
+                         ┌─────────────┐
+                         │    Routes   │
+                         └─────────────┘
+```
+
+A composição das dependências ocorre em um único ponto (`src/routes/index.js`). Os repositories recebem o `Database`, enquanto os services recebem os repositories por injeção de dependência.
