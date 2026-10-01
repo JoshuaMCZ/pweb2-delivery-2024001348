@@ -35,14 +35,13 @@ export class EntregasService {
   }
 
   listar(status) {
+    const filtros = [];
+
     if (status !== undefined) {
-      return {
-        dados: this.repository.listarPorStatus(status),
-        status: 200
-      };
+      filtros.status = status;
     }
 
-    return { dados: this.repository.listar(), status: 200 };
+    return { dados: this.repository.listarTodos(filtros), status: 200 };
   }
 
   buscarPorId(id) {
@@ -78,7 +77,7 @@ export class EntregasService {
       descricao: `Status alterado para ${proximoStatus}`
     });
 
-    return { dados: this.repository.atualizar(entrega), status: 200 };
+    return { dados: this.repository.atualizar(entrega.id, entrega), status: 200 };
   }
 
   cancelar(id) {
@@ -100,7 +99,7 @@ export class EntregasService {
       descricao: 'Entrega cancelada'
     });
 
-    return { dados: this.repository.atualizar(entrega), status: 200 };
+    return { dados: this.repository.atualizar(entrega.id, entrega), status: 200 };
   }
 
   historico(id) {
