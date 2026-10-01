@@ -10,10 +10,10 @@ import { MotoristasController } from '../controllers/MotoristasController.js';
 export function criarRotas() {
   const database = new Database();
   const repository = new EntregasRepository(database);
-  const service = new EntregasService(repository);
-  const controller = new EntregasController(service);
   const motoristasRepository = new MotoristasRepository(database);
-  const motoristasService = new MotoristasService(motoristasRepository);
+  const service = new EntregasService(repository, motoristasRepository);
+  const controller = new EntregasController(service);
+  const motoristasService = new MotoristasService(motoristasRepository, repository);
   const motoristasController = new MotoristasController(motoristasService);
 
   const router = express.Router();
@@ -24,9 +24,12 @@ export function criarRotas() {
   router.get('/entregas/:id', controller.buscarPorId);
   router.patch('/entregas/:id/avancar', controller.avancar);
   router.patch('/entregas/:id/cancelar', controller.cancelar);
+  router.patch('/entregas/:id/atribuir', controller.atribuirMotorista);
 
   router.post('/motoristas', motoristasController.criar);
   router.get('/motoristas', motoristasController.listar);
+  router.get('/motoristas/:id/entregas', motoristasController.listarEntregas);
+  router.get('/motoristas/:id', motoristasController.buscarPorId);
 
   return router;
 }

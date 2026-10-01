@@ -8,56 +8,51 @@ export class EntregasRepository {
   }
 
   
-
+  /**
+  Cria uma nova entrega.
+  @param {Object} entrega - Dados da entrega.
+  @returns {Object} A entrega criada.
+  */
   criar(entrega) {
-
-    /**
-    Cria uma nova entrega.
-    @param {Object} entrega - Dados da entrega.
-    @returns {Object} A entrega criada.
-    */
-
     this.database.entregas.push(entrega);
     return entrega;
   }
 
+  /**
+  Lista todas as entregas, podendo usar filtros.
+  @param {Object} [filtros] - Filtros opcionais.
+  @returns {Array} Lista de entregas.
+  */
   listarTodos(filtros = {}) {
+    return this.database.entregas.filter((entrega) => {
+      if (filtros.status !== undefined && entrega.status !== filtros.status) {
+        return false;
+      }
 
-    /**
-    Lista todas as entregas, podendo usar filtros.
-    @param {Object} [filtros] - Filtros opcionais.
-    @returns {Array} Lista de entregas.
-    */
+      if (filtros.motoristaId !== undefined && entrega.motoristaId !== Number(filtros.motoristaId)) {
+        return false;
+      }
 
-    if (filtros.status !== undefined) {
-      return this.database.entregas.filter(
-        (entrega) => entrega.status === filtros.status
-      );
-    }
-
-    return [...this.database.entregas];
+      return true;
+    });
   }
 
+  /**
+  Busca uma entrega pelo ID.
+    @param {number} id - ID da entrega.
+  @returns {Object|null} A entrega encontrada ou null caso não exista.
+  */
   buscarPorId(id) {
-
-    /**
-    Busca uma entrega pelo ID.
-     @param {number} id - ID da entrega.
-    @returns {Object|null} A entrega encontrada ou null caso não exista.
-    */
-
     return this.database.entregas.find((entrega) => entrega.id === Number(id)) ?? null;
   }
 
+  /**
+  Atualiza uma entrega.
+  @param {number|Object} id - ID da entrega ou entrega completa, na forma antiga.
+  @param {Object} [dados] - Dados que serão utilizados na atualização.
+  @returns {Object|null} A entrega atualizada ou null caso não exista.
+  */
   atualizar(id, dados) {
-
-    /**
-    Atualiza uma entrega.
-    @param {number|Object} id - ID da entrega ou entrega completa, na forma antiga.
-    @param {Object} [dados] - Dados que serão utilizados na atualização.
-    @returns {Object|null} A entrega atualizada ou null caso não exista.
-    */
-
     const indice = this.database.entregas.findIndex(
     (item) => item.id === Number(id)
     );
@@ -75,16 +70,14 @@ export class EntregasRepository {
     return this.database.entregas[indice];
   }
 
+  /**
+  Busca uma entrega ativa pelos seus dados.
+  @param {string} descricao - Descrição da entrega.
+  @param {string} origem - Origem da entrega.
+  @param {string} destino - Destino da entrega.
+  @returns {Object|null} A entrega encontrada ou null caso não exista.
+  */
   buscarAtivaPorDados(descricao, origem, destino) {
-
-    /**
-    Busca uma entrega ativa pelos seus dados.
-    @param {string} descricao - Descrição da entrega.
-    @param {string} origem - Origem da entrega.
-    @param {string} destino - Destino da entrega.
-    @returns {Object|null} A entrega encontrada ou null caso não exista.
-    */
-
     return this.database.entregas.find(
       (entrega) =>
         entrega.descricao === descricao &&

@@ -1,6 +1,7 @@
 export class EntregasService {
-  constructor(repository) {
+  constructor(repository, motoristasRepository) {
     this.repository = repository;
+    this.motoristasRepository = motoristasRepository
   }
 
   criar({ descricao, origem, destino }) {
@@ -35,7 +36,7 @@ export class EntregasService {
   }
 
   listar(status) {
-    const filtros = [];
+    const filtros = {};
 
     if (status !== undefined) {
       filtros.status = status;
@@ -110,5 +111,33 @@ export class EntregasService {
     }
 
     return { dados: resultado.dados.historico, status: 200 };
+  }
+
+  atribuirMotorista(id, motoristaId) {
+    const entrega = this.repository.buscarPorId(id);
+
+    if (!entrega) {
+      return {dados: {erro: 'Entrega não encontrada'}, status: 404};
+    }
+
+    const motorista = this.motoristasRepository.buscarPorId(motoristaId);
+
+    if (!motorista) {
+      return {dados: {erro: 'Motorista não encontrado'},status: 404};
+    }
+
+    if (entrega.status !== 'CRIADA') {
+      return {dados: {erro: 'Entrega não está no status CRIADA'},status: 422};
+    }
+
+    if (motorista.status !== 'ATIVO') {
+      return {dados: {erro: 'Motorista está INATIVO'},status: 422};
+    }
+
+    entrega.motoristaId = motorista.id;
+
+    const entregaAtualizada = this.repository.atualizar(entrega.id, entrega);
+
+    return {dados: entregaAtualizada,status: 200};
   }
 }

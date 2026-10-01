@@ -1,6 +1,7 @@
 export class MotoristasService {
-    constructor(repository) {
+    constructor(repository, entregasRepository) {
         this.repository = repository;
+        this.entregasRepository = entregasRepository;
     }
 
     listar() {
@@ -29,5 +30,27 @@ export class MotoristasService {
         });
 
         return {dados: motorista,status: 201};
+    }
+
+    buscarPorId(id) {
+        const motorista = this.repository.buscarPorId(id);
+
+        if (!motorista) {return {dados: {erro: 'Motorista não encontrado'}, status: 404};}
+
+        return {dados: motorista, status: 200};
+    }
+
+    listarEntregas(id, status) {
+        const motorista = this.repository.buscarPorId(id);
+
+        if (!motorista) {
+            return {dados: {erro: 'Motorista não encontrado'},status: 404};
+        }
+
+        const filtros = {motoristaId: Number(id)};
+
+        if (status !== undefined) {filtros.status = status;}
+
+        return {dados: this.entregasRepository.listarTodos(filtros),status: 200};
   }
 }

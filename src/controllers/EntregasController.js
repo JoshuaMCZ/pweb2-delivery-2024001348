@@ -42,4 +42,9 @@ export class EntregasController {
       resultado.erro ? { erro: resultado.erro } : resultado.dados
     );
   };
+
+  atribuirMotorista = (req, res) => {
+    const resultado = this.service.atribuirMotorista(req.params.id, req.body.motoristaId);
+    return res.status(resultado.status).json(resultado.dados);
+  };
 }
