@@ -1,6 +1,6 @@
 # Delivery Tracker API
 
-Projeto da Atividade 05 de Programação Web.
+Projeto das Atividades 05 e 06 de Programação Web II.
 
 A aplicação é uma API para cadastro e acompanhamento de entregas, feita com Node.js e Express. O projeto utiliza arquitetura em camadas, separando as rotas, controllers, services e repositories.
 
@@ -94,6 +94,51 @@ curl -X PATCH http://localhost:3000/api/entregas/1/cancelar
 curl http://localhost:3000/api/entregas/1/historico
 ```
 
+
+### Criar um motorista
+
+```bash
+curl -X POST http://localhost:3000/api/motoristas ^
+  -H "Content-Type: application/json" ^
+  -d "{\"nome\":\"João da Silva\",\"cpf\":\"12345678900\",\"placaVeiculo\":\"ABC1D23\"}"
+```
+
+O motorista é criado com status `ATIVO`.
+
+### Listar motoristas
+
+```bash
+curl http://localhost:3000/api/motoristas
+```
+
+### Buscar um motorista
+
+```bash
+curl http://localhost:3000/api/motoristas/1
+```
+
+### Listar entregas de um motorista
+
+```bash
+curl http://localhost:3000/api/motoristas/1/entregas
+```
+
+### Filtrar entregas de um motorista por status
+
+```bash
+curl "http://localhost:3000/api/motoristas/1/entregas?status=CRIADA"
+```
+
+### Atribuir motorista a uma entrega
+
+```bash
+curl -X PATCH http://localhost:3000/api/entregas/1/atribuir ^
+  -H "Content-Type: application/json" ^
+  -d "{\"motoristaId\":1}"
+```
+
+A atribuição só é permitida quando a entrega está com status `CRIADA` e o motorista está `ATIVO`.
+
 ## Estrutura do projeto
 
 ```text
@@ -124,5 +169,3 @@ npm run check
 ## Observação
 
 Os dados ficam somente em memória. Por isso, eles são perdidos quando o servidor é encerrado ou reiniciado.
-
-Esta atividade trabalha com as funcionalidades de **Entregas**. As funcionalidades de Motoristas ficam para a atividade seguinte (atividade 06).
