@@ -1,73 +1,75 @@
+import prisma from '../database/Database.js';
+
 export class EntregasRepository {
-  constructor(database) {
-    this.database = database;
-  }
-
-  gerarId() {
-    return this.database.gerarIdEntrega();
-  }
-
-  
   /**
-  Cria uma nova entrega.
-  @param {Object} entrega - Dados da entrega.
-  @returns {Object} A entrega criada.
+  Cria uma entrega e seu primeiro evento de histórico.
+  @param {Object} entrega Dados da entrega.
+  @returns {Promise<Object>} Entrega criada.
   */
-  criar(entrega) {
-    this.database.entregas.push(entrega);
-    return entrega;
+  async criar(entrega) {
+    const { historico = [], ...dados } = entrega;
+
+    return prisma.entrega.create({
+      data: {
+        descricao: dados.descricao,
+        origem: dados.origem,
+        destino: dados.destino,
+        status: dados.status ?? 'CRIADA',
+        motoristaId: dados.motoristaId ?? null,
+        historico: {create: historico.map((evento) => ({data: evento.data, descricao: evento.descricao}))}
+      },
+
+      include: {historico: true}
+
+    });
   }
 
   /**
   Lista todas as entregas, podendo usar filtros.
   @param {Object} [filtros] - Filtros opcionais.
-  @returns {Array} Lista de entregas.
+  @returns {Array} Lista de entregas encontradas.
   */
-  listarTodos(filtros = {}) {
-    return this.database.entregas.filter((entrega) => {
-      if (filtros.status !== undefined && entrega.status !== filtros.status) {
-        return false;
-      }
+  async listarTodos(filtros = {}) {
+    const where = {};
 
-      if (filtros.motoristaId !== undefined && entrega.motoristaId !== Number(filtros.motoristaId)) {
-        return false;
-      }
+    if (filtros.status !== undefined) {where.status = filtros.status;}
 
-      return true;
-    });
+    if (filtros.motoristaId !== undefined) {
+      where.motoristaId = Number(filtros.motoristaId);
+    }
+
+    return prisma.entrega.findMany({where,include: {historico: true}});
   }
 
   /**
   Busca uma entrega pelo ID.
-    @param {number} id - ID da entrega.
-  @returns {Object|null} A entrega encontrada ou null caso não exista.
+  @param {number} id - ID da entrega.
+  @returns {Promise<Object|null>} A entrega encontrada ou null caso não exista.
   */
-  buscarPorId(id) {
-    return this.database.entregas.find((entrega) => entrega.id === Number(id)) ?? null;
+  async buscarPorId(id) {
+    return prisma.entrega.findUnique({
+      where: {id: Number(id) }, 
+      include: {historico: true}});
   }
 
   /**
   Atualiza uma entrega.
-  @param {number|Object} id - ID da entrega ou entrega completa, na forma antiga.
+  @param {number|Object} id - ID da entrega.
   @param {Object} [dados] - Dados que serão utilizados na atualização.
-  @returns {Object|null} A entrega atualizada ou null caso não exista.
+  @returns {Promise<Object|null>} A entrega atualizada ou null caso não exista.
   */
-  atualizar(id, dados) {
-    const indice = this.database.entregas.findIndex(
-    (item) => item.id === Number(id)
-    );
+  async atualizar(id, dados) {
+    const entregaExistente = await prisma.entrega.findUnique({where: { id: Number(id) }});
 
-    if (indice === -1) {
-      return null;
-    }
+    if (!entregaExistente) {return null;}
 
-    this.database.entregas[indice] = {
-      ...this.database.entregas[indice],
-      ...dados,
-      id: Number(id)
-    };
+    const { historico, id: idIgnorado, ...dadosAtualizaveis } = dados;
 
-    return this.database.entregas[indice];
+    return prisma.entrega.update({
+      where: { id: Number(id) },
+      data: dadosAtualizaveis,
+      include: {historico: true}
+    });
   }
 
   /**
@@ -75,16 +77,33 @@ export class EntregasRepository {
   @param {string} descricao - Descrição da entrega.
   @param {string} origem - Origem da entrega.
   @param {string} destino - Destino da entrega.
-  @returns {Object|null} A entrega encontrada ou null caso não exista.
+  @returns {Promise<Object|null>} A entrega encontrada ou null caso não exista.
   */
-  buscarAtivaPorDados(descricao, origem, destino) {
-    return this.database.entregas.find(
-      (entrega) =>
-        entrega.descricao === descricao &&
-        entrega.origem === origem &&
-        entrega.destino === destino &&
-        entrega.status !== 'ENTREGUE' &&
-        entrega.status !== 'CANCELADA'
-    ) ?? null;
+  async buscarAtivaPorDados(descricao, origem, destino) {
+    return prisma.entrega.findFirst({
+      where: {
+        descricao,
+        origem,
+        destino,
+        status: {notIn: ['ENTREGUE', 'CANCELADA']}
+      },
+      include: {historico: true}
+    });
+  }
+
+  /**
+  Adiciona um evento ao histórico de uma entrega.
+  @param {number|string} entregaId Identificador da entrega.
+  @param {Object} evento Dados do evento.
+  @returns {Promise<Object>} Evento criado.
+  */
+  async adicionarEvento(entregaId, evento) {
+    return prisma.evento.create({
+      data: {
+        data: evento.data,
+        descricao: evento.descricao,
+        entregaId: Number(entregaId)
+      }
+    });
   }
 }

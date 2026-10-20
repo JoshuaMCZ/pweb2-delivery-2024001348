@@ -1,8 +1,8 @@
 # Delivery Tracker API
 
-Projeto das Atividades 05 e 06 de Programação Web II.
+Projeto das Atividades 05, 06 e 07 de Programação Web II.
 
-A aplicação é uma API para cadastro e acompanhamento de entregas, feita com Node.js e Express. O projeto utiliza arquitetura em camadas, separando as rotas, controllers, services e repositories.
+A aplicação é uma API para cadastro e acompanhamento de entregas, feita com Node.js, Express, Prisma e SQLite. O projeto utiliza arquitetura em camadas, separando as rotas, controllers, services e repositories.
 
 ## Como executar
 
@@ -12,6 +12,24 @@ Na pasta do projeto, execute:
 
 ```bash
 npm install
+```
+
+Crie o arquivo `.env` a partir do exemplo. No terminal, execute:
+
+```cmd
+cp .env.example .env # DATABASE_URL="file:./dev.db" 
+```
+
+Confira se o `.env` contém:
+
+```env
+DATABASE_URL="file:./dev.db"
+```
+
+Aplique as migrações do Prisma para criar o banco:
+
+```bash
+npx prisma migrate dev
 ```
 
 Depois:
@@ -24,6 +42,12 @@ A API ficará disponível em:
 
 ```text
 http://localhost:3000
+```
+
+Para inspecionar os dados do banco, execute em outro terminal:
+
+```bash
+npx prisma studio
 ```
 
 ## Testando a API
@@ -46,10 +70,8 @@ Resposta:
 
 No Windows:
 
-```bash
-curl -X POST http://localhost:3000/api/entregas ^
-  -H "Content-Type: application/json" ^
-  -d "{\"descricao\":\"Entrega de documentos\",\"origem\":\"Maceió\",\"destino\":\"Arapiraca\"}"
+```cmd
+curl -X POST http://localhost:3000/api/entregas -H "Content-Type: application/json" -d "{\"descricao\":\"Entrega de documentos\",\"origem\":\"Maceió\",\"destino\":\"Arapiraca\"}"
 ```
 
 ### Listar entregas
@@ -69,6 +91,8 @@ curl "http://localhost:3000/api/entregas?status=EM_TRANSITO"
 ```bash
 curl http://localhost:3000/api/entregas/1
 ```
+
+A resposta inclui a propriedade `historico` com os eventos registrados para a entrega.
 
 ### Avançar o status
 
@@ -97,10 +121,8 @@ curl http://localhost:3000/api/entregas/1/historico
 
 ### Criar um motorista
 
-```bash
-curl -X POST http://localhost:3000/api/motoristas ^
-  -H "Content-Type: application/json" ^
-  -d "{\"nome\":\"João da Silva\",\"cpf\":\"12345678900\",\"placaVeiculo\":\"ABC1D23\"}"
+```cmd
+curl -X POST http://localhost:3000/api/motoristas -H "Content-Type: application/json" -d "{\"nome\":\"João da Silva\",\"cpf\":\"12345678900\",\"placaVeiculo\":\"ABC1D23\"}"
 ```
 
 O motorista é criado com status `ATIVO`.
@@ -131,10 +153,8 @@ curl "http://localhost:3000/api/motoristas/1/entregas?status=CRIADA"
 
 ### Atribuir motorista a uma entrega
 
-```bash
-curl -X PATCH http://localhost:3000/api/entregas/1/atribuir ^
-  -H "Content-Type: application/json" ^
-  -d "{\"motoristaId\":1}"
+```cmd
+curl -X PATCH http://localhost:3000/api/entregas/1/atribuir -H "Content-Type: application/json" -d "{\"motoristaId\":1}"
 ```
 
 A atribuição só é permitida quando a entrega está com status `CRIADA` e o motorista está `ATIVO`.
@@ -142,21 +162,25 @@ A atribuição só é permitida quando a entrega está com status `CRIADA` e o m
 ## Estrutura do projeto
 
 ```text
+prisma/
+├── migrations/
+└── schema.prisma
+
 src/
 ├── controllers/
-├── services/
-├── repositories/
 ├── database/
+├── generated/
+├── repositories/
 ├── routes/
-└── utils/
+└── services/
 ```
 
 - **Controllers:** recebem as requisições e retornam as respostas.
 - **Services:** concentram as regras de negócio.
-- **Repositories:** cuidam dos dados.
-- **Database:** mantém os dados em memória.
+- **Repositories:** cuidam do acesso aos dados por meio do Prisma.
+- **Database:** mantém a instância compartilhada do Prisma Client.
 - **Routes:** definem as rotas e organizam as dependências.
-- **Utils:** pasta para funções auxiliares (acabei não usando, mas continua no arquivo pela estrutura do projeto).
+- **Generated:** arquivos gerados pelo Prisma.
 
 ## Autograder
 
@@ -166,38 +190,38 @@ Com o servidor rodando, abra outro terminal e execute:
 npm run check
 ```
 
-## Observação
+## Persistência
 
-Os dados ficam somente em memória. Por isso, eles são perdidos quando o servidor é encerrado ou reiniciado.
+As entregas, os motoristas e os eventos do histórico são armazenados no SQLite. Os dados continuam disponíveis após reiniciar o servidor.
+
 ## Diagrama da composição das dependências
 
 ```text
-                         ┌──────────────┐
-                         │   Database   │
-                         └──────┬───────┘
-                                │
-                ┌───────────────┴───────────────┐
-                │                               │
-                ▼                               ▼
-     ┌────────────────────┐          ┌──────────────────────┐
-     │ EntregasRepository │          │ MotoristasRepository │
-     └─────────┬──────────┘          └──────────┬───────────┘
-               │                                │
-               ▼                                ▼
-     ┌────────────────────┐          ┌──────────────────────┐
-     │  EntregasService   │◄────────►│  MotoristasService  │
-     └─────────┬──────────┘          └──────────┬───────────┘
-               │                                │
-               ▼                                ▼
-     ┌────────────────────┐          ┌──────────────────────┐
-     │ EntregasController │          │ MotoristasController │
-     └─────────┬──────────┘          └──────────┬───────────┘
-               │                                │
-               └───────────────┬────────────────┘
-                               ▼
-                         ┌─────────────┐
-                         │    Routes   │
-                         └─────────────┘
+                         ┌──────────────────────┐
+                         │ Prisma Client        │
+                         │ (Database singleton) │
+                         └──────────┬───────────┘
+                                    │
+                ┌───────────────────┴───────────────────┐
+                │                                       │
+                ▼                                       ▼
+     ┌────────────────────┐                ┌──────────────────────┐
+     │ EntregasRepository │                │ MotoristasRepository │
+     └─────────┬──────────┘                └──────────┬───────────┘
+               │                                      │
+               ▼                                      ▼
+     ┌────────────────────┐                ┌──────────────────────┐
+     │  EntregasService   │◄──────────────►│  MotoristasService   │
+     └─────────┬──────────┘                └──────────┬───────────┘
+               │                                      │
+               ▼                                      ▼
+     ┌────────────────────┐                ┌──────────────────────┐
+     │ EntregasController │                │ MotoristasController │
+     └─────────┬──────────┘                └──────────┬───────────┘
+               │                                      │
+               └───────────────────┬──────────────────┘
+                                   ▼
+                                 Routes
 ```
 
-A composição das dependências ocorre em um único ponto (`src/routes/index.js`). Os repositories recebem o `Database`, enquanto os services recebem os repositories por injeção de dependência.
+A composição das dependências ocorre em um único ponto (`src/routes/index.js`). Os repositories acessam o banco pelo Prisma Client compartilhado, enquanto os services recebem os repositories por injeção de dependência.

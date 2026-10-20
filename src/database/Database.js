@@ -1,16 +1,5 @@
-export class Database {
-  constructor() {
-    this.entregas = [];
-    this.proximoIdEntrega = 1;
-    this.motoristas = [];
-    this.proximoIdMotoristas = 1;
-  }
+import { PrismaClient } from '@prisma/client';
 
-  gerarIdEntrega() {
-    return this.proximoIdEntrega++;
-  }
+const prisma = new PrismaClient();
 
-  gerarIdMotorista() {
-    return this.proximoIdMotoristas++;
-  }
-}
+export default prisma;

@@ -4,7 +4,7 @@ export class EntregasService {
     this.motoristasRepository = motoristasRepository
   }
 
-  criar({ descricao, origem, destino }) {
+  async criar({ descricao, origem, destino }) {
     if (!descricao || !origem || !destino) {
       return { erro: 'descricao, origem e destino são obrigatórios', status: 400 };
     }
@@ -13,12 +13,17 @@ export class EntregasService {
       return { erro: 'origem e destino devem ser diferentes', status: 400 };
     }
 
-    if (this.repository.buscarAtivaPorDados(descricao, origem, destino)) {
+    const duplicada = await this.repository.buscarAtivaPorDados(
+      descricao,
+      origem,
+      destino
+    );
+
+    if (duplicada) {
       return { erro: 'já existe uma entrega ativa com os mesmos dados', status: 409 };
     }
 
     const entrega = {
-      id: this.repository.gerarId(),
       descricao,
       origem,
       destino,
@@ -32,21 +37,21 @@ export class EntregasService {
       ]
     };
 
-    return { dados: this.repository.criar(entrega), status: 201 };
+    return { dados: await this.repository.criar(entrega), status: 201 };
   }
 
-  listar(status) {
+  async listar(status) {
     const filtros = {};
 
     if (status !== undefined) {
       filtros.status = status;
     }
 
-    return { dados: this.repository.listarTodos(filtros), status: 200 };
+    return { dados: await this.repository.listarTodos(filtros), status: 200 };
   }
 
-  buscarPorId(id) {
-    const entrega = this.repository.buscarPorId(id);
+  async buscarPorId(id) {
+    const entrega = await this.repository.buscarPorId(id);
 
     if (!entrega) {
       return { erro: 'entrega não encontrada', status: 404 };
@@ -55,8 +60,8 @@ export class EntregasService {
     return { dados: entrega, status: 200 };
   }
 
-  avancar(id) {
-    const resultado = this.buscarPorId(id);
+  async avancar(id) {
+    const resultado = await this.buscarPorId(id);
 
     if (resultado.erro) {
       return resultado;
@@ -72,17 +77,20 @@ export class EntregasService {
       return { erro: 'transição de status inválida', status: 422 };
     }
 
-    entrega.status = proximoStatus;
-    entrega.historico.push({
+    await this.repository.atualizar(entrega.id, {
+      status: proximoStatus
+    });
+    
+    await this.repository.adicionarEvento(entrega.id, {
       data: new Date().toISOString(),
       descricao: `Status alterado para ${proximoStatus}`
     });
 
-    return { dados: this.repository.atualizar(entrega.id, entrega), status: 200 };
+    return { dados: await this.repository.buscarPorId(entrega.id), status: 200 };
   }
 
-  cancelar(id) {
-    const resultado = this.buscarPorId(id);
+  async cancelar(id) {
+    const resultado = await this.buscarPorId(id);
 
     if (resultado.erro) {
       return resultado;
@@ -94,17 +102,18 @@ export class EntregasService {
       return { erro: 'entrega não pode ser cancelada neste estado', status: 422 };
     }
 
-    entrega.status = 'CANCELADA';
-    entrega.historico.push({
+    await this.repository.atualizar(entrega.id, {status: 'CANCELADA'});
+
+    await this.repository.adicionarEvento(entrega.id, {
       data: new Date().toISOString(),
       descricao: 'Entrega cancelada'
     });
 
-    return { dados: this.repository.atualizar(entrega.id, entrega), status: 200 };
+    return { dados: await this.repository.buscarPorId(entrega.id), status: 200 };
   }
 
-  historico(id) {
-    const resultado = this.buscarPorId(id);
+  async historico(id) {
+    const resultado = await this.buscarPorId(id);
 
     if (resultado.erro) {
       return resultado;
@@ -113,14 +122,14 @@ export class EntregasService {
     return { dados: resultado.dados.historico, status: 200 };
   }
 
-  atribuirMotorista(id, motoristaId) {
-    const entrega = this.repository.buscarPorId(id);
+  async atribuirMotorista(id, motoristaId) {
+    const entrega = await this.repository.buscarPorId(id);
 
     if (!entrega) {
       return {dados: {erro: 'Entrega não encontrada'}, status: 404};
     }
 
-    const motorista = this.motoristasRepository.buscarPorId(motoristaId);
+    const motorista = await this.motoristasRepository.buscarPorId(motoristaId);
 
     if (!motorista) {
       return {dados: {erro: 'Motorista não encontrado'},status: 404};
@@ -134,9 +143,7 @@ export class EntregasService {
       return {dados: {erro: 'Motorista está INATIVO'},status: 422};
     }
 
-    entrega.motoristaId = motorista.id;
-
-    const entregaAtualizada = this.repository.atualizar(entrega.id, entrega);
+    const entregaAtualizada = await this.repository.atualizar( entrega.id, { motoristaId: motorista.id } );
 
     return {dados: entregaAtualizada,status: 200};
   }

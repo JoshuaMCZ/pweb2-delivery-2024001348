@@ -1,5 +1,4 @@
 import express from 'express';
-import { Database } from '../database/Database.js';
 import { EntregasRepository } from '../repositories/EntregasRepository.js';
 import { EntregasService } from '../services/EntregasService.js';
 import { EntregasController } from '../controllers/EntregasController.js';
@@ -8,11 +7,12 @@ import { MotoristasService } from '../services/MotoristasService.js';
 import { MotoristasController } from '../controllers/MotoristasController.js';
 
 export function criarRotas() {
-  const database = new Database();
-  const repository = new EntregasRepository(database);
-  const motoristasRepository = new MotoristasRepository(database);
+  const repository = new EntregasRepository();
+  const motoristasRepository = new MotoristasRepository();
+
   const service = new EntregasService(repository, motoristasRepository);
   const controller = new EntregasController(service);
+  
   const motoristasService = new MotoristasService(motoristasRepository, repository);
   const motoristasController = new MotoristasController(motoristasService);
 

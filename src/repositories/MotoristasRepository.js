@@ -1,57 +1,49 @@
-export class MotoristasRepository {
-    constructor(database) {
-        this.database = database;
-    }
+import prisma from '../database/Database.js';
 
+export class MotoristasRepository {
     /**
     Cria um novo motorista.
-    @param {Object} dados - dados do motorista.
-    @returns {Object} O motorista criado.
+    @param {Object} dados Dados do motorista.
+    @returns {Promise<Object>} Motorista criado.
     */
-    criar(dados) {
-
-        const motorista = {
-            id: this.database.gerarIdMotorista(),
+    async criar(dados) {
+    return prisma.motorista.create({
+        data: {
             nome: dados.nome,
             cpf: dados.cpf,
-            placaVeiculo: dados.placaVeiculo,
+            placaVeiculo: dados.placaVeiculo ?? null,
             status: 'ATIVO'
-        };
-
-        this.database.motoristas.push(motorista);
-        return motorista;
+            }
+        });
     }
 
     /**
     Lista todos os motoristas cadastrados.
-    @returns {Array<Object>} Lista de motoristas.
+    @returns {Promise<Array>} Lista de motoristas.
     */
-    listarTodos() {
-        return [...this.database.motoristas];
+    async listarTodos() {
+        return prisma.motorista.findMany();
     }
 
     /**
     Busca um motorista pelo ID.
     @param {number} id - ID do motorista.
-    @returns {Object|null} Motorista encontrado ou null caso não exista.
+    @returns {Promise<Object|null>} Motorista encontrado ou null caso não exista.
     */
-    buscarPorId(id) {
-        return (this.database.motoristas.find(
-            (motorista) => motorista.id === Number(id)
-            ) || null
-            );
-    }
+    async buscarPorId(id) {
+        return prisma.motorista.findUnique({
+            where: { id: Number(id) }
+        });
+  }
 
     /**
     Busca um motorista pelo CPF.
     @param {string} cpf - CPF do motorista.
     @returns {Object|null} Motorista encontrado ou null caso não exista.
     */
-    buscarPorCpf(cpf) {
-        return (
-        this.database.motoristas.find(
-            (motorista) => motorista.cpf === cpf
-        ) || null
-        );
-    }
+    async buscarPorCpf(cpf) {
+        return prisma.motorista.findUnique({
+            where: { cpf }
+        });
+  }
 }
