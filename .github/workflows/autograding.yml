@@ -21,6 +21,12 @@ jobs:
       - name: Instalar dependências
         run: npm install --no-audit --no-fund
 
+      - name: Preparar banco de dados
+        run: |
+          echo 'DATABASE_URL="file:./dev.db"' > .env
+          npx prisma generate
+          npx prisma migrate deploy
+
       - name: Subir o servidor
         run: |
           PORT=3000 npm start &
