@@ -43,11 +43,14 @@ export class EntregasService {
   async listar(status) {
     const filtros = {};
 
-    if (status !== undefined) {
+    if (status) {
       filtros.status = status;
     }
 
-    return { dados: await this.repository.listarTodos(filtros), status: 200 };
+    return {
+      dados: await this.repository.listarTodos(filtros),
+      status: 200
+    };
   }
 
   async buscarPorId(id) {

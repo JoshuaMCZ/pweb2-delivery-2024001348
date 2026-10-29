@@ -1,163 +1,137 @@
-# Delivery Tracker API
+# Delivery Tracker
 
-Projeto das Atividades 05, 06 e 07 de Programação Web II.
+Projeto de Programação Web II para cadastro e acompanhamento de entregas e motoristas. A aplicação utiliza Node.js, Express, EJS, Prisma e SQLite, com arquitetura em camadas para separar rotas, controllers, services e repositories.
 
-A aplicação é uma API para cadastro e acompanhamento de entregas, feita com Node.js, Express, Prisma e SQLite. O projeto utiliza arquitetura em camadas, separando as rotas, controllers, services e repositories.
+## Funcionalidades
+
+- Cadastro e listagem de entregas.
+- Consulta dos detalhes de uma entrega e de seu histórico de eventos.
+- Atualização do status da entrega e cancelamento conforme as regras de negócio.
+- Cadastro e listagem de motoristas.
+- Atribuição de um motorista ativo a uma entrega que ainda esteja com status `CRIADA`.
+- Persistência dos dados em banco SQLite.
+
+## Tecnologias utilizadas
+
+- **Node.js** e **npm** — execução e gerenciamento das dependências.
+- **Express** — servidor web e roteamento.
+- **EJS** e **express-ejs-layouts** — renderização das páginas.
+- **Prisma** — acesso ao banco de dados.
+- **SQLite** — persistência local dos dados.
+- **express-validator** — validação dos formulários.
 
 ## Como executar
 
-É necessário ter o Node.js e o npm instalados.
+### Pré-requisitos
 
-Na pasta do projeto, execute:
+- Node.js e npm instalados.
+- Terminal aberto na pasta raiz do projeto, onde está o arquivo `package.json`.
+
+### 1. Instalar as dependências
 
 ```bash
 npm install
 ```
 
-Crie o arquivo `.env` a partir do exemplo. No terminal, execute:
+### 2. Configurar as variáveis de ambiente
 
-```cmd
-cp .env.example .env # DATABASE_URL="file:./dev.db" 
+O projeto usa a variável `DATABASE_URL` para configurar o banco SQLite. Crie o '.env' usando o arquivo de exemplo '.env.example'.
+
+No **Windows PowerShell**:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-Confira se o `.env` contém:
+No **Prompt de Comando (CMD)**:
+
+```cmd
+copy .env.example .env
+```
+
+No **Linux/macOS**:
+
+```bash
+cp .env.example .env
+```
+
+Confira se o arquivo `.env` contém:
 
 ```env
 DATABASE_URL="file:./dev.db"
 ```
 
-Aplique as migrações do Prisma para criar o banco:
+### 3. Preparar o banco de dados
+
+Aplique as migrações já incluídas no projeto e gere o Prisma Client:
 
 ```bash
-npx prisma migrate dev
+npx prisma migrate deploy
+npx prisma generate
 ```
 
-Depois:
+O projeto utiliza SQLite, e a configuração do banco está em `prisma/schema.prisma`. A URL do banco é definida no `.env`.
+
+### 4. Iniciar a aplicação
 
 ```bash
 npm start
 ```
 
-A API ficará disponível em:
+O terminal deverá informar que o Delivery Tracker está rodando. Por padrão, acesse:
+
+- **Aplicação web:** http://localhost:3000 (redireciona para http://localhost:3000/entregas)
+- **Listagem de entregas:** http://localhost:3000/entregas
+- **Listagem de motoristas:** http://localhost:3000/motoristas
+- **Verificação de saúde:** http://localhost:3000/api/health
+
+Para encerrar o servidor, use `Ctrl + C` no terminal em que ele está rodando.
+
+## Uso da aplicação
+
+### Entregas
+
+Na página `/entregas`, é possível visualizar as entregas cadastradas. A opção de nova entrega abre o formulário de cadastro. Ao acessar os detalhes de uma entrega, a aplicação permite consultar suas informações, acompanhar os eventos do histórico e executar as ações permitidas para seu status.
+
+O fluxo normal de status é:
 
 ```text
-http://localhost:3000
+CRIADA → EM_TRANSITO → ENTREGUE
 ```
 
-Para inspecionar os dados do banco, execute em outro terminal:
+Uma entrega pode ser cancelada conforme as regras de negócio. Não é permitido avançar uma entrega que não tenha uma próxima transição válida, nem cancelar uma entrega já entregue ou cancelada.
 
-```bash
-npx prisma studio
-```
+![Página inicial / Entregas](src/docs/imagens/entregas.png)
 
-## Testando a API
+![Nova entrega](src/docs/imagens/novaEntrega.png)
 
-### Verificar se está funcionando
+![Detalhes da entrega](src/docs/imagens/detalhesEntrega.png)
+
+### Motoristas
+
+Na página `/motoristas`, é possível consultar os motoristas cadastrados e acessar o formulário para cadastrar outro motorista. O CPF deve ser único. Os motoristas são criados com status `ATIVO` por padrão.
+
+Uma entrega só pode receber um motorista quando ainda estiver com status `CRIADA` e o motorista estiver `ATIVO`.
+
+![Lista de motoristas](src/docs/imagens/motoristas.png)
+
+![Novo motorista](src/docs/imagens/novoMotorista.png)
+
+## Verificação da aplicação
+
+A rota abaixo permite verificar se o servidor está respondendo:
 
 ```bash
 curl http://localhost:3000/api/health
 ```
 
-Resposta:
+Resposta esperada:
 
 ```json
 {
   "status": "ok"
 }
 ```
-
-### Criar uma entrega
-
-No Windows:
-
-```cmd
-curl -X POST http://localhost:3000/api/entregas -H "Content-Type: application/json" -d "{\"descricao\":\"Entrega de documentos\",\"origem\":\"Maceió\",\"destino\":\"Arapiraca\"}"
-```
-
-### Listar entregas
-
-```bash
-curl http://localhost:3000/api/entregas
-```
-
-### Filtrar por status
-
-```bash
-curl "http://localhost:3000/api/entregas?status=EM_TRANSITO"
-```
-
-### Buscar uma entrega
-
-```bash
-curl http://localhost:3000/api/entregas/1
-```
-
-A resposta inclui a propriedade `historico` com os eventos registrados para a entrega.
-
-### Avançar o status
-
-```bash
-curl -X PATCH http://localhost:3000/api/entregas/1/avancar
-```
-
-O fluxo normal é:
-
-```text
-CRIADA → EM_TRANSITO → ENTREGUE
-```
-
-### Cancelar uma entrega
-
-```bash
-curl -X PATCH http://localhost:3000/api/entregas/1/cancelar
-```
-
-### Ver o histórico
-
-```bash
-curl http://localhost:3000/api/entregas/1/historico
-```
-
-
-### Criar um motorista
-
-```cmd
-curl -X POST http://localhost:3000/api/motoristas -H "Content-Type: application/json" -d "{\"nome\":\"João da Silva\",\"cpf\":\"12345678900\",\"placaVeiculo\":\"ABC1D23\"}"
-```
-
-O motorista é criado com status `ATIVO`.
-
-### Listar motoristas
-
-```bash
-curl http://localhost:3000/api/motoristas
-```
-
-### Buscar um motorista
-
-```bash
-curl http://localhost:3000/api/motoristas/1
-```
-
-### Listar entregas de um motorista
-
-```bash
-curl http://localhost:3000/api/motoristas/1/entregas
-```
-
-### Filtrar entregas de um motorista por status
-
-```bash
-curl "http://localhost:3000/api/motoristas/1/entregas?status=CRIADA"
-```
-
-### Atribuir motorista a uma entrega
-
-```cmd
-curl -X PATCH http://localhost:3000/api/entregas/1/atribuir -H "Content-Type: application/json" -d "{\"motoristaId\":1}"
-```
-
-A atribuição só é permitida quando a entrega está com status `CRIADA` e o motorista está `ATIVO`.
 
 ## Estrutura do projeto
 
@@ -169,59 +143,35 @@ prisma/
 src/
 ├── controllers/
 ├── database/
-├── generated/
+├── middlewares/
 ├── repositories/
 ├── routes/
-└── services/
+├── services/
+└── views/
+    ├── entregas/
+    ├── erros/
+    ├── layouts/
+    ├── motoristas/
+    └── partials/
+
+autograder/
+└── check.mjs
+
+server.js
+package.json
+prisma.config.ts
 ```
 
-- **Controllers:** recebem as requisições e retornam as respostas.
-- **Services:** concentram as regras de negócio.
-- **Repositories:** cuidam do acesso aos dados por meio do Prisma.
-- **Database:** mantém a instância compartilhada do Prisma Client.
-- **Routes:** definem as rotas e organizam as dependências.
-- **Generated:** arquivos gerados pelo Prisma.
-
-## Autograder
-
-Com o servidor rodando, abra outro terminal e execute:
-
-```bash
-npm run check
-```
+- **Routes:** registram as rotas e montam as dependências.
+- **Controllers:** recebem as requisições e coordenam as respostas.
+- **Services:** implementam as regras de negócio.
+- **Repositories:** concentram as operações de acesso aos dados.
+- **Database:** disponibiliza a instância compartilhada do Prisma Client.
+- **Middlewares:** contêm os middlewares do projeto.
+- **Views:** contêm os templates EJS utilizados pela interface.
+- **Prisma:** contém o schema e as migrações do banco de dados.
+- **Autograder:** contém o script de verificação do projeto.
 
 ## Persistência
 
-As entregas, os motoristas e os eventos do histórico são armazenados no SQLite. Os dados continuam disponíveis após reiniciar o servidor.
-
-## Diagrama da composição das dependências
-
-```text
-                         ┌──────────────────────┐
-                         │ Prisma Client        │
-                         │ (Database singleton) │
-                         └──────────┬───────────┘
-                                    │
-                ┌───────────────────┴───────────────────┐
-                │                                       │
-                ▼                                       ▼
-     ┌────────────────────┐                ┌──────────────────────┐
-     │ EntregasRepository │                │ MotoristasRepository │
-     └─────────┬──────────┘                └──────────┬───────────┘
-               │                                      │
-               ▼                                      ▼
-     ┌────────────────────┐                ┌──────────────────────┐
-     │  EntregasService   │◄──────────────►│  MotoristasService   │
-     └─────────┬──────────┘                └──────────┬───────────┘
-               │                                      │
-               ▼                                      ▼
-     ┌────────────────────┐                ┌──────────────────────┐
-     │ EntregasController │                │ MotoristasController │
-     └─────────┬──────────┘                └──────────┬───────────┘
-               │                                      │
-               └───────────────────┬──────────────────┘
-                                   ▼
-                                 Routes
-```
-
-A composição das dependências ocorre em um único ponto (`src/routes/index.js`). Os repositories acessam o banco pelo Prisma Client compartilhado, enquanto os services recebem os repositories por injeção de dependência.
+As entregas, os motoristas e os eventos do histórico são armazenados no SQLite. A configuração fornecida pelo projeto utiliza `DATABASE_URL="file:./dev.db"`. Os dados ficam no banco local e permanecem após reiniciar o servidor, desde que o arquivo do banco seja mantido.

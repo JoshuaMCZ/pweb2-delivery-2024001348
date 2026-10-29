@@ -1,0 +1,36 @@
+<h1>Novo Motorista</h1>
+
+<% if (erros && erros.length > 0) { %>
+  <ul>
+    <% erros.forEach((erro) => { %>
+      <li><%= erro %></li>
+    <% }) %>
+  </ul>
+<% } %>
+
+<form action="/motoristas" method="POST">
+  <div>
+    <label for="nome">Nome:</label>
+    <input
+      type="text"
+      id="nome"
+      name="nome"
+      value="<%= valores.nome || '' %>"
+      required
+    >
+  </div>
+
+  <div>
+    <label for="cpf">CPF:</label>
+    <input
+      type="text"
+      id="cpf"
+      name="cpf"
+      value="<%= valores.cpf || '' %>"
+      required
+    >
+  </div>
+
+  <button type="submit">Cadastrar motorista</button>
+  <a href="/motoristas">Voltar</a>
+</form>

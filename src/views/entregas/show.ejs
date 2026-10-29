@@ -1,0 +1,62 @@
+<h1>Detalhes da Entrega #<%= entrega.id %></h1>
+
+<p><strong>Descrição:</strong> <%= entrega.descricao %></p>
+<p><strong>Origem:</strong> <%= entrega.origem %></p>
+<p><strong>Destino:</strong> <%= entrega.destino %></p>
+<p><strong>Status:</strong> <%= entrega.status %></p>
+
+<p><strong>Motorista:</strong>
+  <% if (entrega.motoristaId) { %>
+    <% const motoristaAtual = motoristas.find(m => m.id === entrega.motoristaId) %>
+    <%= motoristaAtual ? motoristaAtual.nome : 'Motorista não encontrado' %>
+  <% } else { %>
+    Nenhum motorista atribuído
+  <% } %>
+</p>
+
+<h2>Histórico</h2>
+
+<% if (entrega.historico && entrega.historico.length > 0) { %>
+
+  <ul>
+    <% entrega.historico.forEach((evento) => { %>
+      <li>
+        <%= evento.descricao %>
+        — <%= evento.data %>
+      </li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <p>Nenhum evento registrado.</p>
+<% } %>
+
+<% if (entrega.status === 'CRIADA' || entrega.status === 'EM_TRANSITO') { %>
+
+  <form action="/entregas/<%= entrega.id %>/avancar?_method=PATCH" method="POST">
+    <button type="submit">Avançar status</button>
+  </form>
+
+  <form action="/entregas/<%= entrega.id %>/cancelar?_method=PATCH" method="POST">
+    <button type="submit">Cancelar entrega</button>
+  </form>
+<% } %>
+
+<% if (entrega.status === 'CRIADA') { %>
+
+  <h2>Atribuir motorista</h2>
+
+  <form action="/entregas/<%= entrega.id %>/atribuir?_method=PATCH" method="POST">
+    <label for="motoristaId">Motorista:</label>
+    <select id="motoristaId" name="motoristaId" required>
+      <option value="">Selecione</option>
+      <% motoristas.filter(m => m.status === 'ATIVO').forEach((motorista) => { %>
+        <option value="<%= motorista.id %>"><%= motorista.nome %></option>
+      <% }) %>
+    </select>
+
+<button type="submit">Atribuir</button>
+
+  </form>
+<% } %>
+
+<p><a href="/entregas">Voltar para entregas</a></p>
