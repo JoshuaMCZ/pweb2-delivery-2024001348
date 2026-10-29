@@ -175,3 +175,63 @@ prisma.config.ts
 ## Persistência
 
 As entregas, os motoristas e os eventos do histórico são armazenados no SQLite. A configuração fornecida pelo projeto utiliza `DATABASE_URL="file:./dev.db"`. Os dados ficam no banco local e permanecem após reiniciar o servidor, desde que o arquivo do banco seja mantido.
+
+## Diagrama da composição das dependências
+
+A injeção é feita em `src/routes/index.js`, onde repositories,
+services e controllers são instanciados e conectados. O servidor
+configura o Express e o EJS em `server.js`; os controllers renderizam as
+views correspondentes.
+
+``` text
+                         ┌───────────────────────────┐
+                         │        server.js          │
+                         │ Express + EJS + middlewares│
+                         └─────────────┬─────────────┘
+                                       │
+                                       ▼
+                         ┌───────────────────────────┐
+                         │  src/routes/index.js      │
+                         │   criarRotas()            │
+                         │ Composição das dependências│
+                         └─────────────┬─────────────┘
+                                       │
+                ┌──────────────────────┴──────────────────────┐
+                │                                             │
+                ▼                                             ▼
+     ┌────────────────────────┐                 ┌────────────────────────┐
+     │ EntregasController     │                 │ MotoristasController   │
+     └────────────┬───────────┘                 └────────────┬───────────┘
+                  │                                          │
+                  ▼                                          ▼
+     ┌────────────────────────┐                 ┌────────────────────────┐
+     │ EntregasService        │◄───────────────►│ MotoristasService      │
+     └────────────┬───────────┘                 └────────────┬───────────┘
+                  │                                          │
+                  ▼                                          ▼
+     ┌────────────────────────┐                 ┌────────────────────────┐
+     │ EntregasRepository     │                 │ MotoristasRepository   │
+     └────────────┬───────────┘                 └────────────┬───────────┘
+                  │                                          │
+                  └──────────────────────┬───────────────────┘
+                                         ▼
+                         ┌───────────────────────────┐
+                         │ Prisma Client compartilhado│
+                         │ src/database/Database.js  │
+                         └─────────────┬─────────────┘
+                                       ▼
+                         ┌───────────────────────────┐
+                         │       Banco SQLite        │
+                         └───────────────────────────┘
+
+
+      Controllers ───────────────► Views EJS (src/views/)
+      Routes ────────────────────► Middleware de validação
+                                   (src/middlewares/)
+```
+
+Os repositories utilizam a instância compartilhada do Prisma Client para
+acessar o SQLite. Os services recebem os repositories por injeção de
+dependência, e os controllers recebem os services. As rotas conectam as
+requisições aos controllers e aplicam os middlewares de validação nos
+formulários.
